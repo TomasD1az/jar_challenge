@@ -1,0 +1,38 @@
+# Dependencias que puede usar una entrega.
+#
+# La computadora de la organización donde corre tu software se prepara una sola vez, antes del evento,
+# con esta lista: no se instala nada por equipo. El CI usa la misma lista,
+# así lo que da verde en tu PR también anda en el robot.
+#
+# `tools/verificar_dependencias.py` compara contra esto lo que declarás en `package.xml` (claves de
+# rosdep) y en `requirements.txt` (paquetes de pip). Si necesitás algo que no está, pedilo a la
+# organización antes de la fecha límite (a confirmar) y, si se acepta, se suma acá para todos.
+
+# Claves de rosdep. Se admiten patrones con `*` (los de ament vienen con ROS).
+ros:
+  - ament_*
+  - rclpy
+  - launch
+  - launch_ros
+  - std_msgs
+  - std_srvs
+  - geometry_msgs
+  - nav_msgs
+  - sensor_msgs
+  - visualization_msgs
+  - builtin_interfaces
+  - rcl_interfaces
+  - tf2_ros
+  - tf2_geometry_msgs
+  - tf2_msgs
+  - cv_bridge
+  - python3-numpy
+  - python3-opencv
+  - python3-scipy
+  - python3-matplotlib
+  - python3-yaml
+  - python3-pytest
+
+# Paquetes de pip (nombre, sin versión). Vacío a propósito: casi todo lo útil ya viene como clave de
+# rosdep (numpy, OpenCV, scipy). Pedí uno acá solo si no existe como paquete del sistema.
+pip: []

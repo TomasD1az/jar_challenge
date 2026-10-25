@@ -11,8 +11,7 @@ Este repositorio es el punto de partida y a la vez la vía de entrega: hacés un
 ```text
 jar_challenge/
 ├── equipo.yaml                     nombre de tu equipo y código de inscripción (completalo)
-├── Dockerfile                      imagen que la organización construye y corre sin internet
-├── requirements.txt                dependencias de Python que no vienen con ROS
+├── requirements.txt                paquetes de pip permitidos (hoy vacío, ver la regla 3)
 ├── src/
 │   └── equipo_jar/                 tu paquete ROS 2 (podés agregar más paquetes en src/)
 │       ├── launch/competencia.launch.py    EL launch: levanta todo tu software
@@ -65,7 +64,7 @@ Es un juez de práctica, no el oficial: en el evento las colisiones, el regreso 
 
 1. **Un único launch.** `ros2 launch equipo_jar competencia.launch.py` tiene que levantar todo y quedarse esperando el mapa en `/map`. No mueve el robot ni reporta nada antes de recibirlo. **Acepta la cantidad de víctimas como argumento** (`victimas:=N`): la organización informa N en el lugar, antes de cada corrida, y tu software tiene que buscar esa cantidad. El template ya lo recibe como parámetro `cantidad_victimas`.
 2. **Parámetros en `params/`.** Solo valores generales: umbrales, ganancias, límites de velocidad, rangos de color. Nada de coordenadas, rutas ni posiciones. Es la única carpeta que se puede retocar después del cierre de entregas.
-3. **Todo dentro de la imagen.** Tu software corre en un contenedor sin internet. Las dependencias y los pesos de los modelos tienen que quedar en la imagen al construirla con el `Dockerfile`. Probalo con `docker build -t equipo-jar . && docker run --rm --network none equipo-jar`.
+3. **Solo dependencias permitidas.** Tu software corre en una computadora de la organización que se prepara una sola vez, antes del evento, y sin internet durante la corrida: no se instala nada por equipo ni se descarga nada al arrancar. Declará lo que uses en `src/equipo_jar/package.xml` y limitate a lo que figura en [tools/dependencias_permitidas.yaml](tools/dependencias_permitidas.yaml) (ROS 2, OpenCV, numpy, scipy...). Si necesitás otra librería, pedila a la organización antes de la fecha límite (a confirmar) y, si se acepta, la sumamos para todos. Los archivos que necesites (por ejemplo pesos de un modelo) van en tu repo, hasta 50 MB cada uno. `tools/verificar.sh` comprueba todo esto.
 4. **Nada del mapa de competencia.** No incluyas mapas, mundos ni posiciones de víctimas, señuelos u obstáculos, ni rutas derivadas de observar la arena. El mapa llega por `/map` en la corrida.
 5. **Solo la interfaz oficial.** Tu software usa los topics del reglamento (`/map`, `/victimas`, `/done`, `/cmd_vel`, `/scan`, `/odom`, `/imu/data`, `/cam_1/...`, `/joint_states`, `/tf`, `/tf_static`). Los topics internos entre tus propios nodos son libres. Nada de ground truth del simulador. **Usá la QoS de cada topic** ([docs/QOS.md](docs/QOS.md)): `/scan` y las cámaras son *best effort*, y `/victimas`, `/done` y `/cmd_vel` se publican *reliable*. Con otra, no te llega nada o no te escuchan, y no da derecho a repetir la corrida.
 6. **CI en verde.** El CI corre en cada push a tu PR. Corré lo mismo en tu máquina antes:
@@ -81,12 +80,13 @@ Es un juez de práctica, no el oficial: en el evento las colisiones, el regreso 
 
 | Control | Qué comprueba |
 | --- | --- |
-| Estructura | Launch, `params/`, `Dockerfile` y `equipo.yaml` en su lugar; sin mapas ni mundos embebidos. |
+| Dependencias | Lo que declarás en `package.xml` y `requirements.txt` está en la lista permitida. |
+| Estructura | Launch, `params/` y `equipo.yaml` en su lugar; sin mapas ni mundos embebidos. |
 | Parámetros | `params/` sin coordenadas, poses ni rutas a mapas. |
 | Revisión estática | Sin acceso a interfaces fuera del reglamento. Además marca posibles hardcodeos para que las mire el juez técnico: una marca **no es una sanción**. |
 | Compilación y tests | `colcon build` y `colcon test`. |
 | El launch espera el mapa | Con el juez de práctica: no mueve el robot ni reporta antes de `/map`, los reportes tienen el formato oficial, y ningún nodo publica donde no debe, y la QoS de tus publicadores y suscriptores es la correcta. |
-| Imagen sin internet | La imagen se construye y el launch sigue vivo sin red. |
+| Launch sin red | El paquete se compila y el launch sigue vivo esperando `/map` en una red aislada, sin internet. |
 | Simulador | Corrida en mundos de práctica, y auditoría de las interfaces usadas. |
 
 El detalle fino de las revisiones contra el hardcodeo no se publica. La organización vuelve a correr los controles desde una copia propia de `tools/` y `.github/`: modificarlos en tu fork no cambia el resultado.
