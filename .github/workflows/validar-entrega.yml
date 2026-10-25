@@ -82,8 +82,8 @@ jobs:
     timeout-minutes: 15
     container:
       image: ros:humble-ros-base-jammy@sha256:860e53793ccf575e5369b5e9a19939de2bfcfb46a299954d06f54f2af54fed19
-      # Crear la red aislada (unshare -n) necesita CAP_SYS_ADMIN dentro del contenedor.
-      options: --cap-add SYS_ADMIN
+      # Crear la red aislada (unshare -n) necesita CAP_SYS_ADMIN, y levantar su loopback, CAP_NET_ADMIN.
+      options: --cap-add SYS_ADMIN --cap-add NET_ADMIN
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -108,19 +108,18 @@ jobs:
           source install/setup.bash
           export ROS_LOCALHOST_ONLY=1
           unshare -n bash -c '
-            ip link set lo up
+            ip link set lo up || { echo "::error::no pude levantar el loopback de la red aislada"; exit 1; }
             if python3 -c "import urllib.request; urllib.request.urlopen(\"https://github.com\", timeout=3)" 2> /dev/null; then
               echo "::error::la red no quedó aislada: la prueba no vale"; exit 1
             fi
-            ros2 launch equipo_jar competencia.launch.py use_sim_time:=false > launch_sin_red.log 2>&1 &
-            pid=$!
-            sleep 25
-            if ! kill -0 "$pid" 2> /dev/null; then
-              cat launch_sin_red.log
-              echo "::error::el launch terminó antes de tiempo sin red"; exit 1
-            fi
-            kill -INT "$pid"; wait "$pid"
+            # timeout termina con 124 si el launch seguía vivo a los 25 s (lo esperado).
+            timeout --signal=INT 25 ros2 launch equipo_jar competencia.launch.py use_sim_time:=false \
+              > launch_sin_red.log 2>&1
+            rc=$?
             tail -20 launch_sin_red.log
+            if [ "$rc" -ne 124 ]; then
+              echo "::error::el launch terminó antes de tiempo sin red (código $rc)"; exit 1
+            fi
           '
 
   simulador:
