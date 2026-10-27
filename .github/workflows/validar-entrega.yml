@@ -98,6 +98,10 @@ jobs:
           python3 tools/verificar_dependencias.py
           rosdep update --rosdistro humble
           rosdep install --from-paths src --ignore-src -y --rosdistro humble
+          if [ -s requirements.txt ] && grep -qvE '^\s*(#|$)' requirements.txt; then
+            apt-get install -y --no-install-recommends python3-pip
+            pip3 install -r requirements.txt
+          fi
           source /opt/ros/humble/setup.bash
           colcon build --base-paths src
 
@@ -112,12 +116,13 @@ jobs:
             if python3 -c "import urllib.request; urllib.request.urlopen(\"https://github.com\", timeout=3)" 2> /dev/null; then
               echo "::error::la red no quedó aislada: la prueba no vale"; exit 1
             fi
-            # timeout termina con 124 si el launch seguía vivo a los 25 s (lo esperado).
-            timeout --signal=INT 25 ros2 launch equipo_jar competencia.launch.py use_sim_time:=false \
+            # timeout termina con 124 si el launch seguía vivo a los 25 s (lo esperado), o con 137 si
+            # además ignoró el INT y hubo que matarlo a los 10 s más (-k).
+            timeout --signal=INT -k 10 25 ros2 launch equipo_jar competencia.launch.py use_sim_time:=false \
               > launch_sin_red.log 2>&1
             rc=$?
             tail -20 launch_sin_red.log
-            if [ "$rc" -ne 124 ]; then
+            if [ "$rc" -ne 124 ] && [ "$rc" -ne 137 ]; then
               echo "::error::el launch terminó antes de tiempo sin red (código $rc)"; exit 1
             fi
           '
