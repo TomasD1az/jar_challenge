@@ -10,7 +10,7 @@
 #     Nav2, slam_toolbox, robot_localization y tf_transformations);
 #   - los patrones y las claves de `ros:` (más abajo);
 #   - los paquetes que están en tu propio `src/` (por ejemplo, un `equipo_msgs` con tus mensajes).
-# Si necesitás algo que no está, pedilo a la organización antes de la fecha límite (a confirmar) y,
+# Si necesitás algo que no está, pedilo en Discussions antes del cierre de entregas (martes 3 de noviembre, 9:00) y,
 # si se acepta, se suma acá para todos.
 
 # Claves de rosdep, con patrones `*`. Cubren variantes que no están en la lista de arriba.
