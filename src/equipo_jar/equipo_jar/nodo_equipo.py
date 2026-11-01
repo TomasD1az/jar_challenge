@@ -14,6 +14,7 @@ Lo que tenés que hacer vos, en este orden:
 3. Detectar cajas rojas y reportarlas con `armar_reporte`.
 4. Opcional: volver a la largada y publicar en /done.
 """
+import os
 import rclpy
 from geometry_msgs.msg import PointStamped, Twist
 from nav_msgs.msg import OccupancyGrid
@@ -41,6 +42,11 @@ class NodoEquipo(Node):
         self.cantidad_victimas = self.get_parameter('cantidad_victimas').value
 
         self.mapa = None
+        # Log opcional: la organización lo guarda al terminar la corrida (JAR_LOG_DIR).
+        carpeta = os.environ.get('JAR_LOG_DIR', 'logs_jar')
+        os.makedirs(carpeta, exist_ok=True)
+        self.log = open(os.path.join(carpeta, 'log.txt'), 'a', buffering=1)
+        self.log.write('arranque nodo_equipo, victimas=%s\n' % self.cantidad_victimas)
 
         self.sub_mapa = self.create_subscription(
             OccupancyGrid, '/map', self.al_recibir_mapa, QOS_MAPA)
